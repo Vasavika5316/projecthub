@@ -1,0 +1,95 @@
+import React, { useState } from 'react';
+import { NavLink } from 'react-router-dom'; 
+
+const Dashboard = () => {
+    const [activeLink, setActiveLink] = useState('home');
+
+    const handleLogout = () => {
+        localStorage.removeItem("regdNo"); 
+        window.location.href = "/login"; 
+    };
+
+    const sidebarStyle = {
+        background: 'linear-gradient(to bottom, #1E293B, #232870)', 
+        color: '#F8FAFC',
+        width: '250px',
+        height: '100vh', 
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '20px',
+        position: 'fixed',
+        left: '0',
+        boxSizing: 'border-box', 
+    };
+
+    const headingStyle = {
+        textAlign: 'center',
+        width: '100%',
+        marginBottom: '20px',
+        fontSize: '22px',
+        borderBottom: '1px solid #F8FAFC',
+        paddingBottom: '10px',
+    };
+
+    const linkStyle = {
+        textDecoration: 'none',
+        color: '#F8FAFC',
+        padding: '10px',
+        margin: '5px 0',
+        width: '100%',
+        borderRadius: '4px',
+        fontSize: '16px',
+        transition: 'background 0.3s',
+    };
+
+    const activeLinkStyle = {
+        ...linkStyle,
+        backgroundColor: '#232870', 
+        fontWeight: 'bold',
+    };
+
+    return (
+        <div style={sidebarStyle}>
+            <h2 style={headingStyle}>Dashboard</h2>
+            <NavLink
+                to="/home"
+                style={({ isActive }) => isActive ? activeLinkStyle : linkStyle} 
+            >
+                Home
+            </NavLink>
+            <NavLink
+                to="/profile"
+                style={({ isActive }) => isActive ? activeLinkStyle : linkStyle}
+            >
+                Profile
+            </NavLink>
+            <NavLink
+                to="/myactivity"
+                style={({ isActive }) => isActive ? activeLinkStyle : linkStyle}
+            >
+                My Activity
+            </NavLink>
+            <NavLink
+                to="/changePassword"
+                style={({ isActive }) => isActive ? activeLinkStyle : linkStyle}
+            >
+                Change Password
+            </NavLink>
+            <NavLink
+                to="/"
+                style={({ isActive }) => isActive ? activeLinkStyle : linkStyle}
+                onClick={handleLogout}
+            >
+                Logout
+            </NavLink>
+            <NavLink
+                to="/contact"
+                style={({ isActive }) => isActive ? activeLinkStyle : linkStyle}
+            >
+                Contact Us
+            </NavLink>
+        </div>
+    );
+};
+
+export default Dashboard;

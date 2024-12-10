@@ -1,25 +1,24 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Login from './login.js';
+import Home from './home.js';
+import ChangePassword from './changepassword.js'
+import Profile from './profile.js';
+import Activity from './activity.js';
+import Contact from './contact.js';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+export function App() {
+  const isLoggedIn = !!localStorage.getItem("regdNo");
+    return (
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/changepassword" element={<ChangePassword/>}/>
+            <Route path="/profile" element={<Profile/>}/>
+            <Route path="/myactivity" element={<Activity/>}/>
+            <Route path="/contact" element={<Contact/>}/>
+          </Routes>
+        </BrowserRouter>
+    );
 }
-
-export default App;
