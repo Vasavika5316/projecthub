@@ -1,152 +1,194 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Header from './header';
 import Dashboard from './dashboard';
+import axios from 'axios';
 
 const Activity = () => {
+  const regdNo = localStorage.getItem("regdNo");
   const [projects, setProjects] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusMessage, setStatusMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Form Data for Add/Edit
   const [formData, setFormData] = useState({
+    id: null,
     batch: '',
-    dept: '',
+    branch: '',
+    section: '',
     projectName: '',
     teamLeadName: '',
     teamLeadPhone: '',
     teamLeadRegNo: '',
     teamLeadEmail: '',
-    teamMembers: [], 
-    technologies: [], 
-    keywords: [], 
-    domain: [], 
+    teamMembers: [],
+    technologies: [],
+    keywords: [],
+    domain: '',
     summary: '',
-    published: false,
-    title: '',
-    mentorDept: '',
-    mentorName: '',
+    projectType: '',
+    mentorId: '',
     pdfFile: null,
   });
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleArrayInputChange = (e, field) => {
-    const values = e.target.value.split(',').map((item) => item.trim());
-    setFormData((prev) => ({
-      ...prev,
-      [field]: values,
-    }));
-  };
-
-  const handleAddTeamMember = () => {
-    setFormData((prev) => ({
-      ...prev,
-      teamMembers: [...prev.teamMembers, { name: '', regNo: '' }],
-    }));
-  };
-
-  const handleTeamMemberChange = (index, field, value) => {
-    const updatedMembers = [...formData.teamMembers];
-    updatedMembers[index][field] = value;
-    setFormData((prev) => ({
-      ...prev,
-      teamMembers: updatedMembers,
-    }));
-  };
-
-  const handleFileUpload = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      pdfFile: e.target.files[0],
-    }));
-  };
-
-  const handleAddProject = async () => {
-    if (
-      formData.batch &&
-      formData.dept &&
-      formData.projectName &&
-      formData.teamLeadName &&
-      formData.technologies &&
-      formData.keywords &&
-      formData.domain &&
-      formData.summary
-    ) {
-      const formDataToSend = new FormData();
-      formDataToSend.append('batch', formData.batch);
-      formDataToSend.append('dept', formData.dept);
-      formDataToSend.append('projectName', formData.projectName);
-      formDataToSend.append('teamLeadName', formData.teamLeadName);
-      formDataToSend.append('teamLeadPhone', formData.teamLeadPhone);
-      formDataToSend.append('teamLeadRegNo', formData.teamLeadRegNo);
-      formDataToSend.append('teamLeadEmail', formData.teamLeadEmail);
-      formDataToSend.append('teamMembers', JSON.stringify(formData.teamMembers));
-      formDataToSend.append('technologies', JSON.stringify(formData.technologies));
-      formDataToSend.append('keywords', JSON.stringify(formData.keywords));
-      formDataToSend.append('domain', JSON.stringify(formData.domain));
-      formDataToSend.append('summary', formData.summary);
-      formDataToSend.append('published', formData.published);
-      formDataToSend.append('mentorDept', formData.mentorDept);
-      formDataToSend.append('mentorName', formData.mentorName);
-      if (formData.pdfFile) {
-        formDataToSend.append('pdfFile', formData.pdfFile);
-      }
-
+  useEffect(() => {
+    const fetchProjects = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/projects', {
-          method: 'POST',
-          body: formDataToSend,
+        const response = await axios.get(`http://localhost:5000/projects`);
+  
+        const userProjects = response.data.filter((project) => {
+          // Check if the user is the team lead
+          const isTeamLead = project.team_lead_regd_no === regdNo;
+  
+          // Check if the user is in the team members list
+          const teamMembers = Array.isArray(project.team_members) 
+            ? project.team_members  // If already an array
+            : JSON.parse(project.team_members || "[]"); // If stored as JSON string
+  
+          const isTeamMember = teamMembers.includes(regdNo);
+  
+          return isTeamLead || isTeamMember;
         });
-
-        if (response.ok) {
-          const newProject = await response.json();
-          setProjects([...projects, newProject]);
-          setFormData({
-            batch: '',
-            dept: '',
-            projectName: '',
-            teamLeadName: '',
-            teamLeadPhone: '',
-            teamLeadRegNo: '',
-            teamLeadEmail: '',
-            teamMembers: [],
-            technologies: [],
-            keywords: [],
-            domain: [],
-            summary: '',
-            published: false,
-            title: '',
-            mentorDept: '',
-            mentorName: '',
-            pdfFile: null,
-          });
-          setIsModalOpen(false);
-        } else {
-          alert('Error adding project');
-        }
+  
+        setProjects(userProjects || []); // Ensure projects is always an array
       } catch (error) {
-        alert('Error: ' + error.message);
+        console.error("Error fetching projects:", error);
       }
+    };
+  
+    fetchProjects();
+  }, [regdNo]);
+  
+  
+
+  // **Search Filtering**
+  const filteredProjects = useMemo(() => {
+    return projects.filter((project) =>
+      project.project_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.technologies?.some((tech) => tech.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      project.keywords?.some((tech) => tech.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      project.domain?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery, projects]);
+
+  // **Handle Input Change**
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // **Handle Array Inputs**
+  const handleArrayInputChange = (e, field) => {
+    setFormData({ ...formData, [field]: e.target.value.split(',').map((item) => item.trim()) });
+  };
+
+  // **Handle File Upload**
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === 'application/pdf' && file.size <= 5 * 1024 * 1024) {
+      setFormData(prev => ({ ...prev, pdfFile: file }));
     } else {
-      alert('Please fill in all required fields!');
+      alert('Please upload a valid PDF file (max 5MB).');
     }
   };
 
-  const filteredProjects = projects.filter((project) =>
-    project.projectName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // **Handle Edit**
+  const handleEdit = (project) => {
+    setFormData({
+      id: project.id,
+      batch: project.batch || '',
+      branch: project.branch || '',
+      section: project.section || '',
+      projectName: project.project_name || '',
+      teamLeadName: project.team_lead_name || '',
+      teamLeadPhone: project.team_lead_ph_no || '',
+      teamLeadRegNo: project.team_lead_regd_no || '',
+      teamLeadEmail: project.team_lead_email || '',
+      teamMembers: project.team_members
+          ? (Array.isArray(project.team_members) ? project.team_members : JSON.parse(project.team_members))
+          : [],
+      technologies: project.technologies
+          ? (Array.isArray(project.technologies) ? project.technologies : JSON.parse(project.technologies))
+          : [],
+      keywords: project.keywords
+          ? (Array.isArray(project.keywords) ? project.keywords : JSON.parse(project.keywords))
+          : [],
+      domain: project.domain || '',
+      summary: project.summary || '',
+      projectType: project.project_type || '',
+      mentorId: project.mentor_id || '',
+      pdfFile: project.pdf ? `http://localhost:5000${project.pdf}` : null,
+    });
 
+    setIsModalOpen(true);
+  };
+
+  // **Handle Delete**
+  const handleDelete = async (projectId) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/projects/${projectId}`);
+      setProjects(projects.filter((project) => project.id !== projectId));
+      alert("Project deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      alert("Failed to delete project!");
+    }
+  };
+
+  // **Handle Add or Update Project**
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const formDataToSend = new FormData();
+  
+      Object.keys(formData).forEach((key) => {
+        if (["teamMembers", "technologies", "keywords"].includes(key)) {
+          formDataToSend.append(key, JSON.stringify(formData[key]));
+        } else if (key === "pdfFile" && formData.pdfFile instanceof File) {
+          formDataToSend.append("file", formData.pdfFile);
+        } else {
+          formDataToSend.append(key, formData[key]);
+        }
+      });
+  
+      let response;
+      if (formData.id) {
+        response = await axios.put(`http://localhost:5000/api/projects/${formData.id}`, formDataToSend, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } else {
+        response = await axios.post("http://localhost:5000/api/projects", formDataToSend, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+  
+      setStatusMessage(response.data.message || "Data saved successfully!");
+      setIsModalOpen(false);
+  
+      // 🛠️ Fetch the updated project list after adding a project
+      const updatedResponse = await axios.get(`http://localhost:5000/projects`);
+      const userProjects = updatedResponse.data.filter(
+        (project) => project.team_lead_regd_no === regdNo
+      );
+      setProjects(userProjects);
+  
+    } catch (error) {
+      console.error("Error submitting project:", error);
+      alert('Error: ' + (error.response ? error.response.data.message : error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
   return (
     <div>
       <Header />
       <div style={styles.mainContainer}>
-          <div style={styles.sidebar}>
-                    <Dashboard />
-                </div>
+        <div style={styles.sidebar}>
+          <Dashboard />
+        </div>
         <main style={styles.content}>
           <div style={styles.contentBox}>
             <header style={styles.header}>
@@ -165,190 +207,189 @@ const Activity = () => {
               />
             </div>
             <div style={styles.projectList}>
-              {filteredProjects.length > 0 ? (
-                filteredProjects.map((project) => (
-                  <div key={project.id} style={styles.projectCard}>
-                    <div>
-                      <h3 style={styles.projectName}>{project.projectName}</h3>
-                      <p style={styles.projectInfo}>Owner: {project.teamLeadName}</p>
-                      <p style={styles.projectInfo}>Last updated: {project.lastUpdated}</p>
-                      <p style={styles.projectInfo}>Description: {project.summary}</p>
-                      <p style={styles.projectInfo}>
-                        Duration: {project.startDate} to {project.endDate}
-                      </p>
-                    </div>
-                    <span style={styles.ownerBadge}>Owner</span>
-                  </div>
-                ))
-              ) : (
-                <p style={styles.noProjects}>No projects found.</p>
-              )}
-            </div>
+              {loading ? <p>Loading...</p> : filteredProjects.length === 0 ? <p>No projects found.</p> :
+              filteredProjects.map((project) => (
+                <div key={project.id}>
+                  <h3>{project.project_name}</h3>
+                  <button onClick={() => handleEdit(project)}>Edit</button>
+                  <button onClick={() => handleDelete(project.id)}>Delete</button>
+                </div>
+              ))
+            }
+          </div>
           </div>
         </main>
-        
       </div>
 
       {isModalOpen && (
-  <div style={styles.modalOverlay}>
-    <div style={styles.modalContent}>
-      <h2 style={styles.modalTitle}>Create New Project</h2>
-      <div style={styles.formContainerStyle}>
-        <label style={styles.label}>Batch</label>
-        <input
-          type="text"
-          name="batch"
-          value={formData.batch}
-          onChange={handleInputChange}
-          style={styles.inputField}
-        />
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContent}>
+          <h2 style={styles.modalTitle}>
+              {formData.id ? "Edit Project" : "Create New Project"}
+          </h2>
+            <div style={styles.formContainerStyle}>
+              <label style={styles.label}>Batch</label>
+              <input
+                type="text"
+                name="batch"
+                value={formData.batch}
+                onChange={handleInputChange}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Department</label>
-        <input
-          type="text"
-          name="dept"
-          value={formData.dept}
-          onChange={handleInputChange}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>Branch</label>
+              <input
+                type="text"
+                name="branch"
+                value={formData.branch}
+                onChange={handleInputChange}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Project Name</label>
-        <input
-          type="text"
-          name="projectName"
-          value={formData.projectName}
-          onChange={handleInputChange}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>Section</label>
+                <input
+                  type="text"
+                  name="section"
+                  value={formData.section}
+                  onChange={handleInputChange}
+                  style={styles.inputField}
+                />
 
-        <label style={styles.label}>Team Lead Name</label>
-        <input
-          type="text"
-          name="teamLeadName"
-          value={formData.teamLeadName}
-          onChange={handleInputChange}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>Project Name</label>
+              <input
+                type="text"
+                name="projectName"
+                value={formData.projectName}
+                onChange={handleInputChange}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Team Lead Phone</label>
-        <input
-          type="text"
-          name="teamLeadPhone"
-          value={formData.teamLeadPhone}
-          onChange={handleInputChange}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>Team Lead Name</label>
+              <input
+                type="text"
+                name="teamLeadName"
+                value={formData.teamLeadName}
+                onChange={handleInputChange}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Team Lead Registration No</label>
-        <input
-          type="text"
-          name="teamLeadRegNo"
-          value={formData.teamLeadRegNo}
-          onChange={handleInputChange}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>Team Lead Phone</label>
+              <input
+                type="text"
+                name="teamLeadPhone"
+                value={formData.teamLeadPhone}
+                onChange={handleInputChange}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Team Lead Email</label>
-        <input
-          type="email"
-          name="teamLeadEmail"
-          value={formData.teamLeadEmail}
-          onChange={handleInputChange}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>Team Lead Registration No</label>
+              <input
+                type="text"
+                name="teamLeadRegNo"
+                value={formData.teamLeadRegNo}
+                onChange={handleInputChange}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Team Members</label>
-        <input
-          type="text"
-          placeholder="Enter team member names, separated by commas"
-          value={formData.teamMembers.join(', ')}
-          onChange={(e) => handleArrayInputChange(e, 'teamMembers')}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>Team Lead Email</label>
+              <input
+                type="email"
+                name="teamLeadEmail"
+                value={formData.teamLeadEmail}
+                onChange={handleInputChange}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Technologies</label>
-        <input
-          type="text"
-          placeholder="Enter technologies, separated by commas"
-          value={formData.technologies.join(', ')}
-          onChange={(e) => handleArrayInputChange(e, 'technologies')}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>Team Members</label>
+              <input
+                type="text"
+                placeholder="Enter team member names, separated by commas"
+                value={formData.teamMembers.join(', ')}
+                onChange={(e) => handleArrayInputChange(e, 'teamMembers')}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Keywords</label>
-        <input
-          type="text"
-          placeholder="Enter keywords, separated by commas"
-          value={formData.keywords.join(', ')}
-          onChange={(e) => handleArrayInputChange(e, 'keywords')}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>Technologies</label>
+              <input
+                type="text"
+                placeholder="Enter technologies, separated by commas"
+                value={formData.technologies.join(', ')}
+                onChange={(e) => handleArrayInputChange(e, 'technologies')}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Domain</label>
-        <input
-          type="text"
-          placeholder="Enter domain, separated by commas"
-          value={formData.domain.join(', ')}
-          onChange={(e) => handleArrayInputChange(e, 'domain')}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>Keywords</label>
+              <input
+                type="text"
+                placeholder="Enter keywords, separated by commas"
+                value={formData.keywords.join(', ')}
+                onChange={(e) => handleArrayInputChange(e, 'keywords')}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Project Summary</label>
-        <textarea
-          name="summary"
-          value={formData.summary}
-          onChange={handleInputChange}
-          style={styles.textareaField}
-        />
+              <label style={styles.label}>Domain</label>
+              <input
+                type="text"
+                name="Domain"
+                value={formData.domain}
+                onChange={(e) => handleArrayInputChange(e, 'domain')}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Published</label>
-        <input
-          type="checkbox"
-          name="published"
-          checked={formData.published}
-          onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
-          style={styles.checkboxField}
-        />
+              <label style={styles.label}>Project Summary</label>
+              <textarea
+                name="summary"
+                value={formData.summary}
+                onChange={handleInputChange}
+                style={styles.textAreaField}
+              ></textarea>
 
-        <label style={styles.label}>Mentor Department</label>
-        <input
-          type="text"
-          name="mentorDept"
-          value={formData.mentorDept}
-          onChange={handleInputChange}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>Project Type</label>
+              <input
+                type="text"
+                name="projectType"
+                value={formData.projectType}
+                onChange={handleInputChange}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Mentor Name</label>
-        <input
-          type="text"
-          name="mentorName"
-          value={formData.mentorName}
-          onChange={handleInputChange}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>Mentor Id</label>
+              <input
+                type="text"
+                name="mentorId"
+                value={formData.mentorId}
+                onChange={handleInputChange}
+                style={styles.inputField}
+              />
 
-        <label style={styles.label}>Upload PDF</label>
-        <input
-          type="file"
-          name="pdfFile"
-          accept=".pdf"
-          onChange={handleFileUpload}
-          style={styles.inputField}
-        />
+              <label style={styles.label}>PDF File</label>
+              <input
+                type="file"
+                name="file" 
+                onChange={handleFileUpload}
+                style={styles.inputField}
+              />
+              {formData.id && formData.pdfFile && (
+                <div>
+                  <p>Current PDF:</p>
+                  <a href={formData.pdfFile} target="_blank" rel="noopener noreferrer">
+                    View PDF
+                  </a>
+                </div>
+              )}
+            </div>
 
-        <div style={styles.modalButtons}>
-          <button onClick={handleAddProject} style={styles.submitButton}>
-            Add Project
-          </button>
-          <button onClick={() => setIsModalOpen(false)} style={styles.cancelButton}>
-            Cancel
-          </button>
+            <div style={styles.modalActions}>
+              <button style={styles.modalCancelButton} onClick={() => setIsModalOpen(false)}>
+                Cancel
+              </button>
+              <button style={styles.modalSaveButton} onClick={handleSubmit}>
+                Save Project
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 };
@@ -356,19 +397,18 @@ const Activity = () => {
 const styles = {
   mainContainer: {
     display: 'flex',
-    height: '100vh',
+    height: '80vh',
   },
   sidebar: {
-    width: '250px',
+    width: '200px',
     position: 'fixed',
-        top: '40',
-        bottom: '0',
-        overflowY: 'auto',
-        padding: '20px',
-        backgroundColor: '#fff',
-        boxShadow: '2px 0 5px rgba(0,0,0,0.1)',
-        height: '100vh', 
-  },
+    top: '60',
+    bottom: '0',
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    boxShadow: '2px 0 5px rgba(0,0,0,0.1)',
+    height: '80vh', 
+},
   content: {
     marginTop:'75px',
     width: '80%',
@@ -432,7 +472,7 @@ const styles = {
   },
   modalOverlay: {
     position: 'fixed',
-    top: 10,
+    top: 0,
     left: 0,
     right: 0,
     bottom: 0,

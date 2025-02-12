@@ -9,13 +9,19 @@ const Home = () => {
     const [error, setError] = useState('');
     const [projects, setProjects] = useState([]); 
     const [searchQuery, setSearchQuery] = useState(''); 
-    const [filteredProjects, setFilteredProjects] = useState([]); 
+    const [filteredProjects, setFilteredProjects] = useState([]);
+    const [selectedBatch, setSelectedBatch] = useState('');
+    const [selectedBranch, setSelectedBranch] = useState('');
+    const [selectedSection, setSelectedSection] = useState('');
+    const [selectedProjectType, setSelectedProjectType] = useState('');
+    const [selectedDomain, setSelectedDomain] = useState('');
+    const [selectedTechnology, setSelectedTechnology] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
         const regdNo = localStorage.getItem('regdNo');
         if (!regdNo) {
-            navigate('/login');
+            navigate('/');
         }
 
         const fetchUserDetails = async () => {
@@ -60,33 +66,57 @@ const Home = () => {
 
     useEffect(() => {
         const searchText = searchQuery.toLowerCase();
-    
+
         const filtered = projects.filter((project) => {
             const matchesTitle = project.project_name?.toLowerCase().includes(searchText);
-    
-            const matchesTechnologies = project.technologies
-                ? Array.isArray(project.technologies)
-                    ? project.technologies.some((tech) => tech.toLowerCase().includes(searchText))
-                    : JSON.parse(project.technologies || "[]").some((tech) => tech.toLowerCase().includes(searchText))
-                : false;
-    
-            const matchesKeywords = project.keywords
-                ? Array.isArray(project.keywords)
-                    ? project.keywords.some((keyword) => keyword.toLowerCase().includes(searchText))
-                    : JSON.parse(project.keywords || "[]").some((keyword) => keyword.toLowerCase().includes(searchText))
-                : false;
-    
+
+            const technologiesArray = Array.isArray(project.technologies)
+                ? project.technologies
+                : project.technologies
+                ? JSON.parse(project.technologies)
+                : [];
+
+            const matchesTechnologies = technologiesArray.some((tech) => 
+                tech.toLowerCase().includes(searchText)
+            );
+
+            const keywordsArray = Array.isArray(project.keywords)
+                ? project.keywords
+                : project.keywords
+                ? JSON.parse(project.keywords)
+                : [];
+
+            const matchesKeywords = keywordsArray.some((keyword) => 
+                keyword.toLowerCase().includes(searchText)
+            );
+
             const matchesDomain = typeof project.domain === "string"
                 ? project.domain.toLowerCase().includes(searchText)
                 : false;
-    
-            return matchesTitle || matchesTechnologies || matchesKeywords || matchesDomain;
+
+            // ✅ **Filters for Dropdowns**
+            const matchesBatch = selectedBatch ? project.batch === selectedBatch : true;
+            const matchesBranch = selectedBranch ? project.branch === selectedBranch : true;
+            const matchesSection = selectedSection ? project.section === selectedSection : true;
+            const matchesProjectType = selectedProjectType ? project.project_type === selectedProjectType : true;
+            const matchesDomainFilter = selectedDomain ? project.domain.toLowerCase() === selectedDomain.toLowerCase() : true;
+            const matchesTechnology = selectedTechnology 
+                ? technologiesArray.some((tech) => tech.toLowerCase() === selectedTechnology.toLowerCase()) 
+                : true;
+
+            return (
+                (matchesTitle || matchesTechnologies || matchesKeywords || matchesDomain) &&
+                matchesBatch &&
+                matchesBranch &&
+                matchesSection &&
+                matchesProjectType &&
+                matchesDomainFilter &&
+                matchesTechnology
+            );
         });
-    
+
         setFilteredProjects(filtered);
-    }, [searchQuery, projects]);
-    
-    
+    }, [searchQuery, selectedBatch, selectedBranch, selectedSection, selectedProjectType, selectedDomain, selectedTechnology, projects]);
 
     if (error) {
         return <div>{error}</div>;
@@ -94,6 +124,7 @@ const Home = () => {
     if (!user) {
         return <div>Loading...</div>;
     }
+
 
     return (
         <div>
@@ -121,8 +152,9 @@ const Home = () => {
                         display: 'flex',
                         flexDirection: 'column',
                         padding: '20px',
+                        // position:'fixed',
                         overflowY: 'auto',
-                        height: 'calc(100vh - 60px)',
+                        height: '80vh',
                         background: '#F8FAFC',
                     }}
                 >
@@ -148,20 +180,20 @@ const Home = () => {
                         >
                             <tbody>
                                 <tr>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Roll No:</td>
-                                    <td style={{ padding: '8px', color: '#374151' }}>{user.regdno}</td>
+                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Roll No</td>
+                                    <td style={{ padding: '8px', color: '#374151' }}>{user.regdNo}</td>
                                 </tr>
                                 <tr>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Name:</td>
+                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Name</td>
                                     <td style={{ padding: '8px', color: '#374151' }}>{user.name}</td>
                                 </tr>
                                 <tr>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Course:</td>
-                                    <td style={{ padding: '8px', color: '#374151' }}>{user.course}</td>
+                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Branch</td>
+                                    <td style={{ padding: '8px', color: '#374151' }}>{user.branch}</td>
                                 </tr>
                                 <tr>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Branch:</td>
-                                    <td style={{ padding: '8px', color: '#374151' }}>{user.branch}</td>
+                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Section</td>
+                                    <td style={{ padding: '8px', color: '#374151' }}>{user.sec}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -181,17 +213,24 @@ const Home = () => {
                                     flexWrap: 'wrap',
                                 }}
                             >
-                                <select style={{ border: '0.1px solid black',padding: '10px', fontSize: '16px' }}>
-                                    <option value="">Year</option>
-                                    <option value="2022">2022</option>
-                                    <option value="2023">2023</option>
-                                    <option value="2024">2024</option>
+                                <select style={{ border: '0.1px solid black',padding: '10px', fontSize: '16px' }} value={selectedBatch} onChange={(e) => setSelectedBatch(e.target.value)}>
+                                    <option value="">Batch</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2026">2026</option>
+                                    <option value="2027">2027</option>
+                                    <option value="2027">2028</option>
                                 </select>
-                                <select style={{ border: '0.1px solid black',padding: '10px', fontSize: '16px' }}>
+                                <select style={{ border: '0.1px solid black',padding: '10px', fontSize: '16px' }} value={selectedBranch} onChange={(e) => setSelectedBranch(e.target.value)}>
                                     <option value="">Branch</option>
                                     <option value="CSE">CSE</option>
+                                    <option value="IT">IT</option>
+                                    <option value="AIDS">AIDS</option>
+                                    <option value="AIML">AIML</option>
+                                    <option value="CS">CS</option>
                                     <option value="ECE">ECE</option>
                                     <option value="EEE">EEE</option>
+                                    <option value="EEE">MECH</option>
+                                    <option value="EEE">CIVIL</option>                                    
                                 </select>
                                 <select style={{ border: '0.1px solid black',padding: '10px', fontSize: '16px' }}>
                                     <option value="">Section</option>
@@ -199,19 +238,19 @@ const Home = () => {
                                     <option value="B">B</option>
                                     <option value="C">C</option>
                                 </select>
-                                <select style={{ border: '0.1px solid black',padding: '10px', fontSize: '16px' }}>
-                                    <option value="">Project</option>
+                                <select style={{ border: '0.1px solid black',padding: '10px', fontSize: '16px' }} value={selectedProjectType} onChange={(e) => setSelectedProjectType(e.target.value)}>
+                                    <option value="">Project Type</option>
                                     <option value="mini">Mini Project</option>
                                     <option value="major">Major Project</option>
-                                    <option value="hackathon">Hackathon</option>
+                                    <option value="hackathon">Other</option>
                                 </select>
-                                <select style={{border: '0.1px solid black', padding: '10px', fontSize: '16px' }}>
+                                <select style={{border: '0.1px solid black', padding: '10px', fontSize: '16px' }} value={selectedDomain} onChange={(e) => setSelectedDomain(e.target.value)}>
                                     <option value="">Domain</option>
                                     <option value="ml">Machine Learning</option>
                                     <option value="fullstack">Full Stack</option>
                                     <option value="cyber">Cyber Security</option>
                                 </select>
-                                <select style={{ border: '0.1px solid black',padding: '10px', fontSize: '16px' }}>
+                                <select style={{ border: '0.1px solid black',padding: '10px', fontSize: '16px' }} value={selectedTechnology} onChange={(e) => setSelectedTechnology(e.target.value)}>
                                     <option value="">Technology</option>
                                     <option value="javascript">JavaScript</option>
                                     <option value="php">PHP</option>
@@ -250,29 +289,17 @@ const Home = () => {
                                 >
                                     <thead>
                                         <tr>
-                                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>Status</th>
                                             <th style={{ padding: '10px', border: '1px solid #ddd' }}>Title</th>
                                             <th style={{ padding: '10px', border: '1px solid #ddd' }}>Technologies</th>
                                             <th style={{ padding: '10px', border: '1px solid #ddd' }}>Keywords</th>
                                             <th style={{ padding: '10px', border: '1px solid #ddd' }}>Domain</th>
-                                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>Difficulty</th>
-                                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>Published</th>
+                                            {/* <th style={{ padding: '10px', border: '1px solid #ddd' }}>Published</th> */}
+                                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>Pdf</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {projects.map((project, index) => (
+                                        {filteredProjects.map((project, index) => (
                                             <tr key={index}>
-                                                <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                                                    <div
-                                                        style={{
-                                                            display: 'inline-block',
-                                                            width: '15px',
-                                                            height: '15px',
-                                                            backgroundColor: 'green',
-                                                            borderRadius: '50%',
-                                                        }}
-                                                    ></div>
-                                                </td>
                                                 <td style={{ padding: '10px', border: '1px solid #ddd' }}>
                                                     {project.project_name}
                                                 </td>
@@ -293,11 +320,20 @@ const Home = () => {
                                                 <td style={{ padding: '10px', border: '1px solid #ddd' }}>
                                                     {project.domain}
                                                 </td>
+                                                {/* <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                                                    {project.is_published?"YES":"NO"}
+                                                </td> */}
                                                 <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                                                    {project.difficulty}
-                                                </td>
-                                                <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                                                    {project.published}
+                                                    {project.pdf ? (
+                                                        <a 
+                                                        href={`http://localhost:5000${project.pdf}`} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer" 
+                                                            style={{ color: 'blue', textDecoration: 'underline' }}
+                                                        >
+                                                            View PDF
+                                                        </a>
+                                                    ) : 'No PDF Available'}
                                                 </td>
                                             </tr>
                                         ))}

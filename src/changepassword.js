@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Dashboard from './dashboard';
 import Header from './header';
 
@@ -7,17 +7,54 @@ const ChangePassword = () => {
     const [newPassword, setNewPassword] = useState('');
     const [rewritePassword, setRewritePassword] = useState('');
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
     const regdNo = localStorage.getItem('regdNo');
-    const handleSubmit = (e) => {
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (newPassword !== rewritePassword) {
             setError('New password and rewrite password do not match');
         } else {
             setError('');
-            alert('Password changed successfully!');
+            try {
+                const response = await fetch('http://localhost:5000/api/change-password', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        regdno: regdNo,
+                        oldPassword: oldPassword,
+                        newPassword: newPassword,
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    setSuccessMessage(data.message);
+                    setOldPassword('');
+                    setNewPassword('');
+                    setRewritePassword('');
+                } else {
+                    setError(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                setError('An error occurred while changing the password.');
+            }
         }
     };
+
+    useEffect(() => {
+        if (successMessage) {
+            const timer = setTimeout(() => {
+                setSuccessMessage('');
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [successMessage]);
 
     return (
         <div>
@@ -72,6 +109,7 @@ const ChangePassword = () => {
                             />
                         </div>
                         {error && <div style={styles.error}>{error}</div>}
+                        {successMessage && <div style={styles.success}>{successMessage}</div>}
                         <button type="submit" style={styles.submitBtn}>
                             Change Password
                         </button>
@@ -85,14 +123,13 @@ const ChangePassword = () => {
 const styles = {
     mainContainer: {
         display: 'flex', 
-        height: '100vh', 
+        height: '80vh', 
         overflow: 'hidden',
     },
     dashboard: {
         width: '250px',
         backgroundColor: '#f4f4f4', 
-        padding: '20px',
-        marginTop:'40',
+        marginTop:'50',
         boxShadow: '2px 0 5px rgba(0, 0, 0, 0.1)',
     },
     changePasswordContainer: {
@@ -137,6 +174,11 @@ const styles = {
         fontSize: '14px',
         marginBottom: '10px',
     },
+    success: {
+        color: 'green',
+        fontSize: '14px',
+        marginBottom: '10px',
+    },
     submitBtn: {
         width: '100%',
         padding: '10px',
@@ -150,4 +192,3 @@ const styles = {
 };
 
 export default ChangePassword;
-

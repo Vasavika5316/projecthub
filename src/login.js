@@ -6,9 +6,23 @@ const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);  // New state to manage loading
     const navigate = useNavigate();
 
+    // Redirect if already logged in
+    React.useEffect(() => {
+        if (localStorage.getItem('regdNo')) {
+            navigate('/home');
+        }
+    }, [navigate]);
+
     const validateLogin = async () => {
+        if (!username || !password) {
+            setError('Please enter both username and password.');
+            return;
+        }
+
+        setIsLoading(true);  // Start loading
         try {
             const response = await fetch('http://localhost:5000/api/login', {
                 method: 'POST',
@@ -27,6 +41,8 @@ const Login = () => {
         } catch (err) {
             console.error('Error during login:', err);
             setError('Something went wrong. Please try again later.');
+        } finally {
+            setIsLoading(false);  // Stop loading
         }
     };
 
@@ -53,8 +69,12 @@ const Login = () => {
                         style={styles.input}
                         required
                     />
-                    <button onClick={validateLogin} style={styles.button}>
-                        Log In
+                    <button
+                        onClick={validateLogin}
+                        style={styles.button}
+                        disabled={isLoading}  // Disable button when loading
+                    >
+                        {isLoading ? 'Logging In...' : 'Log In'}
                     </button>
                 </div>
             </div>
@@ -66,10 +86,14 @@ const styles = {
     body: {
         fontFamily: "'Roboto', sans-serif",
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
+        justifyContent: 'center',   // Horizontally center the login container
+        alignItems: 'center',       // Vertically center the login container
+        height: '80vh',            // Full viewport height
         color: '#fff',
+        flexDirection: 'column',    // Ensure the layout is column-wise
+        // position: 'fixed',
+        margin: 0,                  // Remove default body margin
+        overflow: 'hidden',         // Prevent body scroll
     },
     loginContainer: {
         background: '#fff',
@@ -79,7 +103,8 @@ const styles = {
         boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
         textAlign: 'center',
         width: '100%',
-        maxWidth: '400px',
+        maxWidth: '400px',          // Maximum width of the login container
+        boxSizing: 'border-box',    // Ensures padding is included in the total width
     },
     header: {
         fontSize: '24px',

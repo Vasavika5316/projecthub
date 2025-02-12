@@ -6,13 +6,13 @@ const Dashboard = () => {
 
     const handleLogout = () => {
         localStorage.removeItem("regdNo"); 
-        window.location.href = "/login"; 
+        window.location.href = "/"; 
     };
 
     const sidebarStyle = {
         background: 'linear-gradient(to bottom, #1E293B, #232870)', 
         color: '#F8FAFC',
-        width: '250px',
+        width: '260px',
         height: '100vh', 
         display: 'flex',
         flexDirection: 'column',
@@ -74,6 +74,12 @@ const Dashboard = () => {
                 style={({ isActive }) => isActive ? activeLinkStyle : linkStyle}
             >
                 Change Password
+            </NavLink>
+            <NavLink
+                to="/datavisualization"
+                style={({ isActive }) => isActive ? activeLinkStyle : linkStyle}
+            >
+                Data Visualization
             </NavLink>
             <NavLink
                 to="/"

@@ -6,7 +6,7 @@ import ChangePassword from './changepassword.js'
 import Profile from './profile.js';
 import Activity from './activity.js';
 import Contact from './contact.js';
-
+import DV from './dv.js';
 export function App() {
   const isLoggedIn = !!localStorage.getItem("regdNo");
     return (
@@ -18,6 +18,7 @@ export function App() {
             <Route path="/profile" element={<Profile/>}/>
             <Route path="/myactivity" element={<Activity/>}/>
             <Route path="/contact" element={<Contact/>}/>
+            <Route path="/datavisualization" element={<DV/>}/>
           </Routes>
         </BrowserRouter>
     );

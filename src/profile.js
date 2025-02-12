@@ -69,22 +69,22 @@ const Profile = () => {
                         <h1 style={styles.header}>Profile Details</h1>
                         <div style={styles.profileDetails}>
                             <p>
-                                <strong>Name:</strong> {profileData.name}
+                                <strong style={{ marginRight: "40px" }}>Name</strong> {profileData.name}
                             </p>
                             <p>
-                                <strong>Regd. No:</strong> {profileData.regdno}
+                                <strong style={{ marginRight: "20px" }}>Regd No</strong> {profileData.regdNo}
                             </p>
                             <p>
-                                <strong>Branch:</strong> {profileData.branch}
+                                <strong style={{ marginRight: "34px" }}>Branch</strong> {profileData.branch}
                             </p>
                             <p>
-                                <strong>Section:</strong> {profileData.section}
+                                <strong style={{ marginRight: "30px" }}>Section</strong> {profileData.sec}
                             </p>
                             <p>
-                                <strong>Email:</strong> {profileData.email}
+                                <strong style={{ marginRight: "42px" }}>Email</strong> {profileData.email}
                             </p>
                             <p>
-                                <strong>Phone No:</strong> {profileData.phoneNo}
+                                <strong style={{ marginRight: "9px" }}>Phone No</strong> {profileData.phone_no}
                             </p>
                         </div>
                     </div>
@@ -97,29 +97,30 @@ const Profile = () => {
 const styles = {
     container: {
         display: 'flex',
-        height: '100vh',
+        height: '80vh', // Full viewport height
     },
     sidebar: {
         width: '250px',
         position: 'fixed',
-        top: '40',
+        top: '60',
         bottom: '0',
         overflowY: 'auto',
-        padding: '20px',
         backgroundColor: '#fff',
         boxShadow: '2px 0 5px rgba(0,0,0,0.1)',
-        height: '100vh', 
+        height: '80vh',
     },
     body: {
         flexGrow: 1,
-        marginLeft: '250px', 
+        marginLeft: '250px', // Space for sidebar
         display: 'flex',
-        justifyContent: 'center', 
-        alignItems: 'center',
-        height: '100vh', 
-        padding: '20px',
+        justifyContent: 'center',
+        // alignItems: 'flex-center', // Align to the top
+        padding: '10px',
         backgroundColor: '#f9f9f9',
-        overflow: 'hidden', 
+        overflow: 'auto', // Allows scrolling if content overflows
+        height: '98vh',
+        // width: '280px', // Take up full height of viewport
+        boxSizing: 'border-box', // To include padding in the height calculation
     },
     profileContainer: {
         background: '#fff',
@@ -128,7 +129,10 @@ const styles = {
         borderRadius: '8px',
         boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
         width: '100%',
+        height: '45vh',
         maxWidth: '600px',
+        marginTop:'120',
+        // overflow: 'hidden', // Prevents overflow within the profile container
     },
     header: {
         fontSize: '24px',
@@ -142,5 +146,6 @@ const styles = {
         color: '#333',
     },
 };
+
 
 export default Profile;

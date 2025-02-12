@@ -2,22 +2,21 @@ const Header = () => {
     return (
         <div style={{
             background: '#232870',
-        color: '#F8FAFC',
-        height: '60px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'fixed', 
-        top: '0',
-        width: '100%',
-        zIndex: 10, 
-        boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
+            color: '#F8FAFC',
+            height: '60px',
+            display: 'flex',
+            top:'0%',
+            right:'0%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'fixed',
+            width: '100%',
         }}>
             <img 
-                src="./assets/logo.png" 
-                alt="Logo" 
+                src="/assets/logo.png"  // Ensure logo is in the public folder
+                alt="Shri Vishnu Engineering College for Women logo"
                 style={{
-                    height: "50px",
+                    height: "75px",
                     width: "auto",
                     marginRight: "15px",
                 }} 
@@ -27,10 +26,12 @@ const Header = () => {
                 textAlign: "center",
                 flexGrow: 1,
                 color: "#F8FAFC",
+                fontSize: "1.8rem",  // Adjust font size for better scaling
             }}>
                 SHRI VISHNU ENGINEERING COLLEGE FOR WOMEN
             </h2>
         </div>
     );
 };
+
 export default Header;
