@@ -293,7 +293,7 @@ const Home = () => {
                                             <th style={{ padding: '10px', border: '1px solid #ddd' }}>Technologies</th>
                                             <th style={{ padding: '10px', border: '1px solid #ddd' }}>Keywords</th>
                                             <th style={{ padding: '10px', border: '1px solid #ddd' }}>Domain</th>
-                                            {/* <th style={{ padding: '10px', border: '1px solid #ddd' }}>Published</th> */}
+                                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>Contact</th>
                                             <th style={{ padding: '10px', border: '1px solid #ddd' }}>Pdf</th>
                                         </tr>
                                     </thead>
@@ -320,9 +320,11 @@ const Home = () => {
                                                 <td style={{ padding: '10px', border: '1px solid #ddd' }}>
                                                     {project.domain}
                                                 </td>
-                                                {/* <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                                                    {project.is_published?"YES":"NO"}
-                                                </td> */}
+                                                <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                                                    {project.team_lead_regd_no} <br />
+                                                    {project.team_lead_ph_no} <br />
+                                                    {project.team_lead_email}
+                                                </td>
                                                 <td style={{ padding: '10px', border: '1px solid #ddd' }}>
                                                     {project.pdf ? (
                                                         <a 

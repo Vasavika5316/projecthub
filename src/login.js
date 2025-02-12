@@ -5,6 +5,7 @@ import Header from './header';
 const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [role, setRole] = useState(''); 
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);  // New state to manage loading
     const navigate = useNavigate();
@@ -27,14 +28,23 @@ const Login = () => {
             const response = await fetch('http://localhost:5000/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ username, password, role })
             });
 
             if (response.ok) {
                 const data = await response.json();
                 console.log('Login successful:', data);
                 localStorage.setItem('regdNo', username);
-                navigate('/home'); 
+                localStorage.setItem('role', role);
+                if (role === 'student') {
+                    navigate('/home');                     
+                } else if (role === 'faculty') {
+                    // query = 'SELECT * FROM faculty WHERE id = ? AND password = ?';
+                    // params = [parseInt(username), password];  
+                } else if (role === 'admin') {
+                    // query = 'SELECT * FROM admin WHERE id = ? AND password = ?';
+                    // params = [parseInt(username), password];  
+                } 
             } else {
                 setError('Incorrect username or password. Please try again.');
             }
@@ -53,6 +63,17 @@ const Login = () => {
                 <div style={styles.loginContainer}>
                     <h1 style={styles.header}>Login</h1>
                     {error && <div style={styles.error}>{error}</div>}
+                    <select
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        style={styles.input}
+                        required
+                    >
+                        <option value="">Select Role</option>
+                        <option value="student">Student</option>
+                        <option value="faculty">Faculty</option>
+                        <option value="admin">Admin</option>
+                    </select>
                     <input
                         type="text"
                         placeholder="Username"

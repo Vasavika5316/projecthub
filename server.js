@@ -36,11 +36,25 @@ db.getConnection()
 
 // Login API
 app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, role } = req.body;
+    let query;
+    let params;
 
-    const query = 'SELECT * FROM Students WHERE regdno = ? AND password = ?';
+    if (role === 'student') {
+        query = 'SELECT * FROM Students WHERE regdNo = ? AND password = ?';
+        params = [username, password];  // username is regdNo (VARCHAR)
+    } else if (role === 'faculty') {
+        query = 'SELECT * FROM faculty WHERE id = ? AND password = ?';
+        params = [parseInt(username), password];  // id is INT
+    } else if (role === 'admin') {
+        query = 'SELECT * FROM admin WHERE id = ? AND password = ?';
+        params = [parseInt(username), password];  // id is INT
+    } else {
+        return res.status(400).json({ message: 'Invalid role' });
+    }
+    
     try {
-        const [results] = await db.query(query, [username, password]);
+        const [results] = await db.query(query, params);
         if (results.length > 0) {
             res.json({ message: 'Login successful', user: results[0] });
         } else {
