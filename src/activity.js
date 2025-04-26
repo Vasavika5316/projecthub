@@ -25,7 +25,7 @@ const Activity = () => {
     teamMembers: [],
     technologies: [],
     keywords: [],
-    domain: '',
+    domain: [],
     summary: '',
     projectType: '',
     mentorId: '',
@@ -68,7 +68,7 @@ const Activity = () => {
       project.project_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.technologies?.some((tech) => tech.toLowerCase().includes(searchQuery.toLowerCase())) ||
       project.keywords?.some((tech) => tech.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      project.domain?.toLowerCase().includes(searchQuery.toLowerCase())
+      project.domain?.some((tech) => tech.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }, [searchQuery, projects]);
 
@@ -113,7 +113,9 @@ const Activity = () => {
       keywords: project.keywords
           ? (Array.isArray(project.keywords) ? project.keywords : JSON.parse(project.keywords))
           : [],
-      domain: project.domain || '',
+      domain: project.domain
+          ? (Array.isArray(project.domain) ? project.domain : JSON.parse(project.domain))
+          : [],
       summary: project.summary || '',
       projectType: project.project_type || '',
       mentorId: project.mentor_id || '',
@@ -143,7 +145,7 @@ const Activity = () => {
       const formDataToSend = new FormData();
   
       Object.keys(formData).forEach((key) => {
-        if (["teamMembers", "technologies", "keywords"].includes(key)) {
+        if (["teamMembers", "technologies", "keywords","domain"].includes(key)) {
           formDataToSend.append(key, JSON.stringify(formData[key]));
         } else if (key === "pdfFile" && formData.pdfFile instanceof File) {
           formDataToSend.append("file", formData.pdfFile);
@@ -303,7 +305,7 @@ const Activity = () => {
               <label style={styles.label}>Team Members</label>
               <input
                 type="text"
-                placeholder="Enter team member names, separated by commas"
+                placeholder="Enter team member regd no, separated by commas"
                 value={formData.teamMembers.join(', ')}
                 onChange={(e) => handleArrayInputChange(e, 'teamMembers')}
                 style={styles.inputField}
@@ -330,8 +332,8 @@ const Activity = () => {
               <label style={styles.label}>Domain</label>
               <input
                 type="text"
-                name="Domain"
-                value={formData.domain}
+                placeholder="Enter domain, separated by commas"
+                value={formData.domain.join(', ')}
                 onChange={(e) => handleArrayInputChange(e, 'domain')}
                 style={styles.inputField}
               />

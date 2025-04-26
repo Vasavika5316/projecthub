@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from './header';
-import Dashboard from './dashboard';
+import ADashboard from './adashboard';
+import axios from 'axios';
 
-const FHome = () => {
+const AHome = () => {
     const [activeSection, setActiveSection] = useState('home');
-    const [user, setUser] = useState(null);
-    const [error, setError] = useState('');
     const [projects, setProjects] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false); // For modal visibility
     const [selectedProject, setSelectedProject] = useState(null); // To store selected project details
@@ -30,45 +29,26 @@ const FHome = () => {
 
     useEffect(() => {
             const regdNo = localStorage.getItem('regdNo');
-            // console.log(regdNo);
             if (!regdNo) {
                 navigate('/');
             }
     
-            const fetchUserDetails = async () => {
-                try {
-                    const response = await fetch(`http://localhost:5000/api/profile/${regdNo}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        setUser(data);
-                    } else {
-                        setError('Error fetching profile data.');
-                    }
-                } catch (err) {
-                    console.error('Error fetching profile data:', err);
-                    setError('Something went wrong. Please try again later.');
-                }
-            };
-    
-            fetchUserDetails();
-    
-            const fetchProjects = async () => {
+            const fetchData = async () => {
                 try {
                     const response = await fetch('http://localhost:5000/projects');
                     if (response.ok) {
                         const data = await response.json();
                         setProjects(data);
-                        extractDropdownOptions(data); 
+                        extractDropdownOptions(data);
                     } else {
                         console.error('Failed to fetch projects.');
                     }
-                } 
-                catch (err) {
+                } catch (err) {
                     console.error('Error fetching project data:', err);
                 }
             };
     
-            fetchProjects();
+            fetchData();
         }, [navigate]);
 
     const extractDropdownOptions = (data) => {
@@ -76,13 +56,7 @@ const FHome = () => {
         const branches = [...new Set(data.map(project => project.branch))];
         const sections = [...new Set(data.map(project => project.section))];
         const projectTypes = [...new Set(data.map(project => project.project_type))];
-        const domains = [
-            ...new Set(data.flatMap(project => 
-                typeof project.domain === 'string' 
-                    ? JSON.parse(project.domain) 
-                    : project.domain || []
-            ))
-        ];
+        const domains = [...new Set(data.map(project => project.domain))];
         const technologies = [
             ...new Set(data.flatMap(project => 
                 typeof project.technologies === 'string' 
@@ -101,6 +75,17 @@ const FHome = () => {
     
       const closeModal = () => {
         setIsModalOpen(false);
+      };
+
+      const handleDelete = async (projectId) => {
+        try {
+          await axios.delete(`http://localhost:5000/api/projects/${projectId}`);
+          setProjects((prevProjects) => prevProjects.filter((project) => project.id !== projectId));
+          // alert("Project deleted successfully!");
+        } catch (error) {
+          console.error("Error deleting project:", error);
+          alert("Failed to delete project!");
+        }
       };
 
     useEffect(() => {
@@ -131,13 +116,6 @@ const FHome = () => {
 
         setFilteredProjects(filtered);
     }, [searchQuery, selectedBatch, selectedBranch, selectedSection, selectedProjectType, selectedDomain, selectedTechnology, projects]);
-    
-    if (error) {
-        return <div>{error}</div>;
-    }
-    if (!user) {
-        return <div>Loading...</div>;
-    }
 
     return (
         <div>
@@ -154,7 +132,7 @@ const FHome = () => {
                         padding: '20px',
                     }}
                 >
-                    <Dashboard />
+                    <ADashboard />
                 </div>
                 <div
                     className="main-content"
@@ -169,24 +147,12 @@ const FHome = () => {
                         background: '#F8FAFC',
                     }}
                 >
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
-                        <table style={{ width: '60%', borderCollapse: 'collapse', textAlign: 'left', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', padding: '15px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                        <table style={{ width: '60%', border: '1px solid #ddd', borderRadius: '8px', padding: '15px' }}>
                             <tbody>
                                 <tr>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Roll No</td>
-                                    <td style={{ padding: '8px', color: '#374151' }}>{user?.regdNo}</td>
-                                </tr>
-                                <tr>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Name</td>
-                                    <td style={{ padding: '8px', color: '#374151' }}>{user?.name}</td>
-                                </tr>
-                                <tr>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Branch</td>
-                                    <td style={{ padding: '8px', color: '#374151' }}>{user?.branch}</td>
-                                </tr>
-                                <tr>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Section</td>
-                                    <td style={{ padding: '8px', color: '#374151' }}>{user?.sec}</td>
+                                    <td style={{ padding: '8px', fontWeight: 'bold' }}>Role</td>
+                                    <td style={{ padding: '8px' }}>Admin</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -194,7 +160,7 @@ const FHome = () => {
 
                     {activeSection === 'home' && (
                         <>
-                            <div style={{ display: 'flex', gap: '10px', marginTop: '40px' }}>
+                            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                                 <select value={selectedBatch} style={{ width: '150px', height: '30px', fontSize: '14px' }} onChange={(e) => setSelectedBatch(e.target.value)}>
                                     <option value="">Select Batch</option>
                                     {dropdownOptions.batches.map((batch, idx) => (
@@ -242,7 +208,7 @@ const FHome = () => {
                                 placeholder="Search projects"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{ width: '260px', padding: '10px', fontSize: '16px', border: '1px solid black', marginBottom: '20px', borderRadius: '4px', height: '30px' }}
+                                style={{ width: '150px', padding: '10px', fontSize: '16px', border: '1px solid black', marginBottom: '20px', borderRadius: '4px', height: '30px' }}
                             />
                             </div>
 
@@ -259,12 +225,13 @@ const FHome = () => {
                                         border: '1px solid #ddd',
                                     }}
                                 >
-                                    <thead style={{ top : -1, position: 'sticky', background: '#fff',}}>
+                                    <thead style={{ top : -1, position: 'sticky', background: '#fff'}}>
                                         <tr>
                                             <th style={{ padding: '10px', border: '1px solid #ddd' }}>Verified</th>
                                             <th style={{ padding: '10px', border: '1px solid #ddd' }}>Title</th>
                                             <th style={{ padding: '10px', border: '1px solid #ddd' }}>Details</th>
                                             <th style={{ padding: '10px', border: '1px solid #ddd' }}>Pdf</th>
+                                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>Delete</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -294,6 +261,9 @@ const FHome = () => {
                                                             View PDF
                                                         </a>
                                                     ) : 'No PDF Available'}
+                                                </td>
+                                                <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                                                <button style={styles.deleteButton} onClick={() => handleDelete(project.id)}>Delete</button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -432,4 +402,4 @@ const styles = {
     },
   };
 
-export default FHome;
+export default AHome;

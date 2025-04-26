@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from './header';
-import Dashboard from './dashboard';
+import FDashboard from './fdashboard';
 
 const FHome = () => {
     const [activeSection, setActiveSection] = useState('home');
@@ -37,10 +37,16 @@ const FHome = () => {
     
             const fetchUserDetails = async () => {
                 try {
-                    const response = await fetch(`http://localhost:5000/api/profile/${regdNo}`);
+                    const response = await fetch(`http://localhost:5000/api/fprofile/${regdNo}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
                     if (response.ok) {
                         const data = await response.json();
                         setUser(data);
+                        // console.log(data);
                     } else {
                         setError('Error fetching profile data.');
                     }
@@ -154,7 +160,7 @@ const FHome = () => {
                         padding: '20px',
                     }}
                 >
-                    <Dashboard />
+                    <FDashboard />
                 </div>
                 <div
                     className="main-content"
@@ -169,28 +175,35 @@ const FHome = () => {
                         background: '#F8FAFC',
                     }}
                 >
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
-                        <table style={{ width: '60%', borderCollapse: 'collapse', textAlign: 'left', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', padding: '15px' }}>
+                    <table
+                            style={{
+                                width: '60%',
+                                borderCollapse: 'collapse',
+                                textAlign: 'left',
+                                backgroundColor: '#fff',
+                                border: '1px solid #ddd',
+                                borderRadius: '8px',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                                padding: '15px',
+                                marginLeft: '250',
+                            }}
+                        >
                             <tbody>
                                 <tr>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Roll No</td>
-                                    <td style={{ padding: '8px', color: '#374151' }}>{user?.regdNo}</td>
+                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Id</td>
+                                    <td style={{ padding: '8px', color: '#374151' }}>{user.id}</td>
                                 </tr>
                                 <tr>
                                     <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Name</td>
-                                    <td style={{ padding: '8px', color: '#374151' }}>{user?.name}</td>
+                                    <td style={{ padding: '8px', color: '#374151' }}>{user.name}</td>
                                 </tr>
                                 <tr>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Branch</td>
-                                    <td style={{ padding: '8px', color: '#374151' }}>{user?.branch}</td>
+                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Department</td>
+                                    <td style={{ padding: '8px', color: '#374151' }}>{user.department}</td>
                                 </tr>
-                                <tr>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: '#374151' }}>Section</td>
-                                    <td style={{ padding: '8px', color: '#374151' }}>{user?.sec}</td>
-                                </tr>
+                                
                             </tbody>
                         </table>
-                    </div>
 
                     {activeSection === 'home' && (
                         <>

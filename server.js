@@ -10,6 +10,7 @@ const app = express();
 const port = 5000;
 
 app.use(cors());
+app.use(express.json());
 app.use(bodyParser.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -66,6 +67,64 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+app.get('/api/domains', async (req, res) => {
+    try {
+        // This assumes you have a domains table or can extract from projects
+        const domains = await db.query('SELECT DISTINCT domain FROM projects');
+        // Or if domains are stored as JSON arrays:
+        // const projects = await db.query('SELECT domain FROM projects');
+        // const allDomains = projects.flatMap(p => JSON.parse(p.domain));
+        // const uniqueDomains = [...new Set(allDomains)];
+        res.json(domains);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/technologies', async (req, res) => {
+    try {
+        // Similar approach as domains
+        const technologies = await db.query('SELECT DISTINCT technologies FROM projects');
+        res.json(technologies);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API to insert student data
+app.post('/add-student', (req, res) => {
+    const { regdNo, name, phone, email, branch, sec, batch, password } = req.body;
+    console.log(req.body);
+    const sql = `INSERT INTO Students (regdNo, name, phone_no, email, branch, sec, batch, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    db.query(sql, [regdNo, name, phone, email, branch, sec, batch, password], (err, result) => {
+        if (err) {
+            console.error('Error inserting student:', err);
+            return res.status(500).json({ message: 'Error adding student' });
+        }
+        res.status(200).json({ message: 'Student added successfully' });
+    });
+});
+
+app.post("/add-faculty", (req, res) => {
+    const { name, id, department, email, phone, password } = req.body;
+    
+    if (!name || !id || !department || !email || !phone || !password) {
+        return res.status(400).json({ error: "All fields are required" });
+    }
+
+    const sql = "INSERT INTO faculty (id, name, department, email, phno, password) VALUES (?, ?, ?, ?, ?, ?)";
+    db.query(sql, [id, name, department, email, phone, password], (err, result) => {
+        if (err) {
+            console.error("Database error:", err);
+            return res.status(500).json({ error: "Database error" });
+        }
+        console.log("Faculty added successfully!", result);
+        return res.status(200).json({ message: "Faculty added successfully!" });
+    });
+    
+});
+
 // Fetch user data by regdno
 app.get('/api/user', async (req, res) => {
     const { regdno } = req.query;
@@ -102,6 +161,25 @@ app.get('/api/profile/:regdno', async (req, res) => {
     }
 });
 
+app.get('/api/fprofile/:id', async (req, res) => {
+    const { id } = req.params;
+    console.log([id])
+    const query = 'SELECT * FROM faculty WHERE id = ?';
+    try {
+        const [result] = await db.query(query, [id]);
+        console.log(result)
+        if (result.length > 0) {
+            res.json(result[0]);
+        } else {
+            res.status(404).json({ error: 'Profile not found' });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+
 // Fetch all projects
 app.get('/projects', async (req, res) => {
     const query = 'SELECT * FROM Projects';
@@ -113,6 +191,36 @@ app.get('/projects', async (req, res) => {
         res.status(500).json({ message: 'Database error' });
     }
 });
+
+app.put('/api/verify-project', async (req, res) => {
+    const { projectId, mentorId } = req.body;
+    console.log(projectId, mentorId);
+    try {
+      // Fetch the project to check if it exists and if the mentor is the correct one
+      const projectQuery = 'SELECT * FROM Projects WHERE id = ?';
+      const [projectResults] = await db.query(projectQuery, [projectId]);
+  
+      if (projectResults.length > 0) {
+        const project = projectResults[0];
+        if (project.mentor_id.toString() !== mentorId) {
+          return res.status(403).json({ message: 'You are not authorized to verify this project' });
+        }
+  
+        // Update the project verification status to 'verified' (set verified to 1)
+        const updateQuery = 'UPDATE Projects SET verified = ? WHERE id = ?';
+        await db.query(updateQuery, [1, projectId]);
+  
+        res.json({ message: 'Project verified successfully' });
+      } else {
+        res.status(404).json({ message: 'Project not found' });
+      }
+    } catch (err) {
+      console.error('Error querying database:', err);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  
 
 // Update password endpoint
 app.put('/api/change-password', async (req, res) => {
@@ -136,6 +244,50 @@ app.put('/api/change-password', async (req, res) => {
       res.status(500).json({ message: 'Internal server error' });
   }
 });
+
+app.put('/api/fchange-password', async (req, res) => {
+    const { id, oldPassword, newPassword } = req.body;
+  
+    try {
+        // Check if the old password matches
+        const query = 'SELECT * FROM faculty WHERE id = ? AND password = ?';
+        const [results] = await db.query(query, [id, oldPassword]);
+  
+        if (results.length > 0) {
+            // Update the password
+            const updateQuery = 'UPDATE faculty SET password = ? WHERE id = ?';
+            await db.query(updateQuery, [newPassword, id]);
+            res.json({ message: 'Password updated successfully' });
+        } else {
+            res.status(401).json({ message: 'Incorrect old password' });
+        }
+    } catch (err) {
+        console.error('Error querying database:', err);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.put('/api/achange-password', async (req, res) => {
+    const { id, oldPassword, newPassword } = req.body;
+  
+    try {
+        // Check if the old password matches
+        const query = 'SELECT * FROM admin WHERE id = ? AND password = ?';
+        const [results] = await db.query(query, [id, oldPassword]);
+  
+        if (results.length > 0) {
+            // Update the password
+            const updateQuery = 'UPDATE admin SET password = ? WHERE id = ?';
+            await db.query(updateQuery, [newPassword, id]);
+            res.json({ message: 'Password updated successfully' });
+        } else {
+            res.status(401).json({ message: 'Incorrect old password' });
+        }
+    } catch (err) {
+        console.error('Error querying database:', err);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+  });
 
 // File upload configuration using multer
 const storage = multer.diskStorage({
@@ -179,6 +331,7 @@ app.post('/api/projects', upload.single('file'), async (req, res) => {
         const teamMembersJson = JSON.stringify(teamMembers ? JSON.parse(teamMembers) : []);
         const technologiesJson = JSON.stringify(technologies ? JSON.parse(technologies) : []);
         const keywordsJson = JSON.stringify(keywords ? JSON.parse(keywords) : []);
+        const domainsJson = JSON.stringify(domain ? JSON.parse(domain) : []);
 
         // File Path
         const file = req.file ? `/uploads/${req.file.filename}` : null;
@@ -199,7 +352,7 @@ app.post('/api/projects', upload.single('file'), async (req, res) => {
 
         const values = [
             batch, branch, section, projectName, teamLeadName, teamLeadPhone, teamLeadRegNo, teamLeadEmail,
-            teamMembersJson, technologiesJson, keywordsJson, domain, summary, projectType, mentorId, file
+            teamMembersJson, technologiesJson, keywordsJson, domainsJson, summary, projectType, mentorId, file
         ];
 
         console.log("Inserting values:", values);
@@ -233,7 +386,8 @@ app.put('/api/projects/:id', upload.single('file'), async (req, res) => {
             JSON.stringify(req.body.teamMembers ? JSON.parse(req.body.teamMembers) : []),
             JSON.stringify(req.body.technologies ? JSON.parse(req.body.technologies) : []),
             JSON.stringify(req.body.keywords ? JSON.parse(req.body.keywords) : []),
-            req.body.domain, req.body.summary, req.body.projectType, req.body.mentorId,
+            JSON.stringify(req.body.domain ? JSON.parse(req.body.domain) : []),
+            req.body.summary, req.body.projectType, req.body.mentorId,
             req.file ? `/uploads/${req.file.filename}` : null, id
         ];
 

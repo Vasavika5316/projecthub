@@ -11,11 +11,11 @@ const Login = () => {
     const navigate = useNavigate();
 
     // Redirect if already logged in
-    React.useEffect(() => {
-        if (localStorage.getItem('regdNo')) {
-            navigate('/home');
-        }
-    }, [navigate]);
+    // React.useEffect(() => {
+    //     if (localStorage.getItem('regdNo')) {
+    //         navigate('/home');
+    //     }
+    // }, [navigate]);
 
     const validateLogin = async () => {
         if (!username || !password) {
@@ -39,11 +39,9 @@ const Login = () => {
                 if (role === 'student') {
                     navigate('/home');                     
                 } else if (role === 'faculty') {
-                    // query = 'SELECT * FROM faculty WHERE id = ? AND password = ?';
-                    // params = [parseInt(username), password];  
+                    navigate('/fhome');   
                 } else if (role === 'admin') {
-                    // query = 'SELECT * FROM admin WHERE id = ? AND password = ?';
-                    // params = [parseInt(username), password];  
+                    navigate('/ahome');  
                 } 
             } else {
                 setError('Incorrect username or password. Please try again.');

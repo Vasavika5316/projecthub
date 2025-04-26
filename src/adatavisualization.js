@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Header from './header';
-import Dashboard from './dashboard';
+import ADashboard from "./adashboard";
 import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ff7300", "#ffc658", "#d0ed57", "#a4de6c"];
 
-const DataVisualization = () => {
+const ADataVisualization = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedBatch, setSelectedBatch] = useState("");
@@ -76,7 +76,7 @@ const DataVisualization = () => {
           left: 0,
           top: "60px"
         }}>
-          <Dashboard />
+          <ADashboard />
         </div>
 
         {/* Main Content */}
@@ -151,4 +151,4 @@ const DataVisualization = () => {
   );
 };
 
-export default DataVisualization;
+export default ADataVisualization;
